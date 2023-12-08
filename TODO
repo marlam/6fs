@@ -1,0 +1,13 @@
+Implement support for extended attributes:
+- All extended attributes must fit into one data block (4 KiB), like in ext4
+- The inode already has an entry for the index of that data block
+
+Implement support for hole punching:
+- Implement FUSE functions fallocate and lseek
+- Beware: our existing punchHole() function does not care to fill holes
+  with zeroes if the system fallocate() fails because we know we don't
+  need to read the data again. We want to keep it that way for efficiency.
+  We need an additional flag 'zeroPunchedData' or similar so that
+  subsequent reads return correct data for the file system user.
+
+Run tests, including xfs-tests if possible, to check correctness.
