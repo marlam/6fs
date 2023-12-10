@@ -46,12 +46,25 @@ Options:
 - `--log-level=<level>`: Set a minimum level for log messages (debug, info, warning, error).
   Default is warning.
 
-## Key Handling
+Example without encryption:
+```
+# Create mount point for 6fs
+mkdir /mnt/6fs
+# Mount 6fs, with its six data files residing in /mnt/usbdrive/6fs
+6fs --dir=/mnt/usbdrive/6fs /mnt/6fs
+# Use rsync to copy something into 6fs (just an example)
+rsync -av /stuff/to/copy /mnt/6fs
+# Unmount 6fs
+fusermount -u /mnt/6fs
+```
 
-Generate a random key for encryption with `dd if=/dev/urandom of=6fs-key bs=1 count=40`.
-
-If you want to protect the key with a password, encrypt it with gpg, and
-decrypt it on the fly for 6fs with `6fs --key=<(gpg -d 6fs-key.gpg) ...`.
+Example with encryption:
+```
+# Create random 40-byte key
+dd if=/dev/urandom of=6fs-key bs=1 count=40
+# Mount 6fs with encryption
+6fs --dir=/mnt/usbdrive/6fs --key=6fs-key /mnt/6fs
+```
 
 # Internals
 
