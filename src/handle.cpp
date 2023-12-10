@@ -469,8 +469,27 @@ int Handle::removeNow()
             _inode.nlink--;
             if (_inode.nlink == 0) {
                 r = _base->inodeRemove(_inodeIndex);
-                while (r == 0 && slotCount() > 0) {
-                    r = removeSlot(slotCount() - 1, true);
+                /* The simple and direct way to delete all data blocks and indirection blocks is this:
+                 * while (r == 0 && slotCount() > 0) {
+                 *     r = removeSlot(slotCount() - 1, true);
+                 * }
+                 * But that rewrites (and reencrypts) indirection blocks for large files a lot,
+                 * and we never need those blocks again.
+                 * So we simply go over all blocks and remove them, and then have to remove
+                 * the indirection blocks whenever a new one appears. */
+                uint64_t lastRemovedIndirectionBlock[4] = { InvalidIndex, InvalidIndex, InvalidIndex, InvalidIndex };
+                for (uint64_t slot = 0; r == 0 && slot < slotCount(); slot++) {
+                    uint64_t blockIndex;
+                    r = getSlot(slot, &blockIndex);
+                    if (r == 0 && blockIndex != InvalidIndex)
+                        r = _base->blockRemove(blockIndex);
+                    for (int l = 0; r == 0 && l < 4; l++) {
+                        if (_cachedBlockIndices[l] != lastRemovedIndirectionBlock[l]) {
+                            if (_cachedBlockIndices[l] != InvalidIndex)
+                                r = _base->blockRemove(_cachedBlockIndices[l]);
+                            lastRemovedIndirectionBlock[l] = _cachedBlockIndices[l];
+                        }
+                    }
                 }
             } else {
                 _inode.ctime = Time::now();
