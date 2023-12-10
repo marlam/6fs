@@ -45,6 +45,8 @@ Options:
   empty, log messages are sent to syslog.
 - `--log-level=<level>`: Set a minimum level for log messages (debug, info, warning, error).
   Default is warning.
+- `--punch-holes=0|1`: Punch holes for unused blocks into the block data file to save disk space.
+  Does not work on all file systems and costs performance. Disabled by default.
 
 Example without encryption:
 ```
@@ -85,10 +87,10 @@ The data files are simple one-dimensional arrays of inode, directory entry, or
 block data.
 
 Unused bits or array entries at the end of each file are removed so that the
-files do not occupy more space than necessary. Moreover, unused data block
-entries are deallocated from the underlying file system if that file system
-supports the `fallocate` flag `FALLOC_FL_PUNCH_HOLE`, so that even unused data
-blocks in the middle of the array do not occupy disk space.
+files do not occupy more space than necessary. Moreover, with `--punch-holes=1`
+unused data block entries are deallocated from the underlying file system if
+that file system supports the `fallocate` flag `FALLOC_FL_PUNCH_HOLE`, so that
+even unused data blocks in the middle of the array do not occupy disk space.
 
 Each inode stores an index to the data associated with that inode (directory
 entries or data blocks). That index uses multilevel indirection to
