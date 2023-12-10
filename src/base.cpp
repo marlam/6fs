@@ -28,10 +28,11 @@
 #include "emergency.hpp"
 
 
-Base::Base(const std::string& dirName, uint64_t maxSize, const std::vector<unsigned char>& key) :
+Base::Base(const std::string& dirName, uint64_t maxSize, const std::vector<unsigned char>& key, bool punchHoles) :
     _dirName(dirName),
     _maxSize(maxSize),
     _key(key),
+    _punchHoles(punchHoles),
     _inodeMapStorage(nullptr),
     _inodeChunkStorage(nullptr),
     _direntMapStorage(nullptr),
@@ -195,7 +196,7 @@ int Base::initialize(std::string& errStr, bool* needsRootNode)
         _blockMap  = new Map(_blockMapStorage);
         _inodeMgr  = new ChunkManager(_inodeMap,  _inodeChunkStorage,  encrypt() ? EncInodeSize  : sizeof(Inode),  false);
         _direntMgr = new ChunkManager(_direntMap, _direntChunkStorage, encrypt() ? EncDirentSize : sizeof(Dirent), false);
-        _blockMgr  = new ChunkManager(_blockMap,  _blockChunkStorage,  encrypt() ? EncBlockSize  : sizeof(Block),  true);
+        _blockMgr  = new ChunkManager(_blockMap,  _blockChunkStorage,  encrypt() ? EncBlockSize  : sizeof(Block),  _punchHoles);
     }
     if (r == 0)
         r = _inodeMgr->initialize();

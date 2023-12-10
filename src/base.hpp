@@ -35,6 +35,7 @@ private:
     const std::string _dirName;
     const uint64_t _maxSize;
     const std::vector<unsigned char> _key;
+    const bool _punchHoles;
 
     Storage* _inodeMapStorage;
     Storage* _inodeChunkStorage;
@@ -75,7 +76,7 @@ private:
     std::map<uint64_t, Handle*> _handleMap;
 
 public:
-    Base(const std::string& dirName, uint64_t maxSize, const std::vector<unsigned char>& key);
+    Base(const std::string& dirName, uint64_t maxSize, const std::vector<unsigned char>& key, bool punchHoles);
 
     int initialize(std::string& errStr, bool* needsRootNode);
     int createRootNode();

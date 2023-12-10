@@ -16,14 +16,21 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "storage_file.hpp"
-
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
+
+#include "storage_file.hpp"
+#include "logger.hpp"
+
+
+// flag that tells us if punching holes is support by the underlying
+// filesystem so that we don't retry indefinitely
+volatile int dontPunchHoles;
 
 
 StorageFile::StorageFile(const std::string& name) : _name(name), _fd(0)
@@ -101,8 +108,14 @@ int StorageFile::writeBytes(uint64_t index, uint64_t size, const void* buf)
 
 int StorageFile::punchHoleBytes(uint64_t index, uint64_t size)
 {
-    if (fallocate(_fd, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE, index, size) != 0) {
-        // not all filesystems support this, but that's ok, our structure is still valid
+    if (!dontPunchHoles) {
+        int r = fallocate(_fd, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE, index, size);
+        if (r != 0) {
+            // Not all filesystems support this, but that's ok, our structure is still valid.
+            // But remember this outcome so that we don't try again needlessly.
+            dontPunchHoles = 1;
+            logger.log(Logger::Warning, "punching a hole failed, not trying again: %s", strerror(errno));
+        }
     }
     return 0;
 }

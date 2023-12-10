@@ -455,6 +455,7 @@ static void sixfsPrintHelp(const char *progname)
             "    --key=<keyfile>        activate encryption and read key from keyfile\n"
             "    --log=<logfile>        log messages to logfile or to syslog (default) if file name is empty\n"
             "    --log-level=<level>    set minimum level for log messages (debug, info, warning, error)\n"
+            "    --punch-holes=0|1      punch holes for unused blocks into the block data file to save disk space\n"
             "  Only for debugging:\n"
             "    --dump-inode=<i>       dump inode\n"
             "    --dump-tree=<i>        dump slot tree of inode\n"
@@ -520,6 +521,7 @@ typedef struct
     const char* keyName;
     const char* logName;
     const char* logLevel;
+    const char* punchHoles;
     const char* dumpInode;
     const char* dumpTree;
     const char* dumpDirent;
@@ -539,6 +541,7 @@ int main(int argc, char *argv[])
         .keyName = nullptr,
         .logName = nullptr,
         .logLevel = nullptr,
+        .punchHoles = nullptr,
         .dumpInode = nullptr,
         .dumpTree = nullptr,
         .dumpDirent = nullptr,
@@ -551,6 +554,7 @@ int main(int argc, char *argv[])
         { "--key=%s",             offsetof(SixfsOptionsStruct, keyName),    1 },
         { "--log=%s",             offsetof(SixfsOptionsStruct, logName),    1 },
         { "--log-level=%s",       offsetof(SixfsOptionsStruct, logLevel),   1 },
+        { "--punch-holes=%s",     offsetof(SixfsOptionsStruct, punchHoles), 1 },
         { "--dump-inode=%s",      offsetof(SixfsOptionsStruct, dumpInode),  1 },
         { "--dump-tree=%s",       offsetof(SixfsOptionsStruct, dumpTree),   1 },
         { "--dump-dirent=%s",     offsetof(SixfsOptionsStruct, dumpDirent), 1 },
@@ -619,6 +623,14 @@ int main(int argc, char *argv[])
         }
         fclose(f);
     }
+    bool punchHoles = false;
+    if (sixfsOptionsStruct.punchHoles) {
+        if (strcmp(sixfsOptionsStruct.punchHoles, "0") != 0 && strcmp(sixfsOptionsStruct.punchHoles, "1") != 0) {
+            fprintf(stderr, "Invalid argument to option --punch-holes\n");
+            return 1;
+        }
+        punchHoles = (strcmp(sixfsOptionsStruct.punchHoles, "1") == 0);
+    }
     std::string dirName;
     if (sixfsOptionsStruct.dirName) {
         dirName = std::string(sixfsOptionsStruct.dirName);
@@ -650,7 +662,7 @@ int main(int argc, char *argv[])
             return 1;
         }
     }
-    SixFS sixfs(dirName, maxSize, key);
+    SixFS sixfs(dirName, maxSize, key, punchHoles);
     if (!sixfsOptionsStruct.showHelp) {
         std::string errStr;
         int r = sixfs.mount(errStr);

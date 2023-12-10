@@ -26,10 +26,11 @@
 
 
 SixFS::SixFS(const std::string& dirName, uint64_t maxSize,
-            const std::vector<unsigned char>& key) :
+            const std::vector<unsigned char>& key, bool punchHoles) :
     _dirName(dirName),
     _maxSize(maxSize),
     _key(key),
+    _punchHoles(punchHoles),
     _base(nullptr)
 {
 }
@@ -192,7 +193,7 @@ int SixFS::rmdirent(const char* path, std::function<int (const Inode& inode)> in
 
 int SixFS::mount(std::string& errStr)
 {
-    _base = new Base(_dirName, _maxSize, _key);
+    _base = new Base(_dirName, _maxSize, _key, _punchHoles);
     bool needsRootNode = false;
     int r = _base->initialize(errStr, &needsRootNode);
     if (r == 0 && needsRootNode) {

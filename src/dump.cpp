@@ -48,7 +48,7 @@ int dump(const std::string& dirName,
         const char* dumpSBlock,
         const char* dumpDBlock)
 {
-    Base base(dirName, 0, key);
+    Base base(dirName, 0, key, false);
     std::string errStr;
     bool needsRootNode = false;
     int r = base.initialize(errStr, &needsRootNode);

@@ -37,6 +37,7 @@ private:
     const std::string _dirName;
     const uint64_t _maxSize;
     const std::vector<unsigned char> _key;
+    const bool _punchHoles;
     Base* _base;
 
     /* Helper functions for locking */
@@ -61,7 +62,7 @@ private:
     int rmdirent(const char* path, std::function<int (const Inode& inode)> inodeChecker);
 
 public:
-    SixFS(const std::string& dirName, uint64_t maxSize, const std::vector<unsigned char>& key);
+    SixFS(const std::string& dirName, uint64_t maxSize, const std::vector<unsigned char>& key, bool punchHoles);
     ~SixFS();
 
     bool isRemote() const;
