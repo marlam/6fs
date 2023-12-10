@@ -461,7 +461,8 @@ static void sixfsPrintHelp(const char *progname)
             "    --dump-tree=<i>        dump slot tree of inode\n"
             "    --dump-dirent=<i>      dump directory entry\n"
             "    --dump-slot-block=<i>  dump block, interpreted as slot indirection block\n"
-            "    --dump-data-block=<i>  dump block, interpreted as data block\n");
+            "    --dump-data-block=<i>  dump block, interpreted as data block\n"
+            "\n");
 }
 
 static int getUint64(const char* s, uint64_t* val, const char** ep)
@@ -635,7 +636,7 @@ int main(int argc, char *argv[])
     std::string dirName;
     if (sixfsOptionsStruct.dirName) {
         dirName = std::string(sixfsOptionsStruct.dirName);
-    } else {
+    } else if (!sixfsOptionsStruct.showHelp) {
         fprintf(stderr, "Option --dir is missing\n");
         return 1;
     }
