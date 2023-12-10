@@ -610,6 +610,7 @@ int main(int argc, char *argv[])
         FILE* f = fopen(sixfsOptionsStruct.keyName, "r");
         if (!f) {
             fprintf(stderr, "Cannot open key file %s: %s\n", sixfsOptionsStruct.keyName, strerror(errno));
+            return 1;
         }
         key.resize(crypto_stream_salsa20_KEYBYTES);
         if (::fread(key.data(), crypto_stream_salsa20_KEYBYTES, 1, f) != 1) {
