@@ -157,13 +157,11 @@ void inodeToStat(uint64_t inodeIndex, const Inode& inode, struct stat* stbuf)
 
 static void* sixfs_init(struct fuse_conn_info* conn, struct fuse_config* cfg)
 {
-    SixFS* sixfs = static_cast<SixFS*>(fuse_get_context()->private_data);
-
     (void)conn;
     cfg->direct_io = 1;         // enabled to get sane read() and write() behaviour; I don't understand how the
                                 // alternative should be implemented
     cfg->use_ino = 1;
-    cfg->kernel_cache = (sixfs->isRemote() ? 0 : 1);
+    cfg->kernel_cache = 1;
     cfg->nullpath_ok = 1;
 
     return fuse_get_context()->private_data;

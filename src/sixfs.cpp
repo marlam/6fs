@@ -40,11 +40,6 @@ SixFS::~SixFS()
     unmount();
 }
 
-bool SixFS::isRemote() const
-{
-    return _dirName.size() == 0;
-}
-
 void SixFS::structureLockExclusive()
 {
     _base->structureLockExclusive();

@@ -65,8 +65,6 @@ public:
     SixFS(const std::string& dirName, uint64_t maxSize, const std::vector<unsigned char>& key, bool punchHoles);
     ~SixFS();
 
-    bool isRemote() const;
-
     int mount(std::string& errStr);
     int unmount();
 
