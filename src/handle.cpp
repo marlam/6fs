@@ -72,19 +72,6 @@ void Handle::unlockShared()
     _mutex.unlock_shared();
 }
 
-int Handle::refresh()
-{
-    int r = _base->inodeRead(_inodeIndex, &_inode);
-    if (r == 0) {
-        _slotCount = ::slotCount(_inode);
-        _cachedBlockIndices[0] = InvalidIndex;
-        _cachedBlockIndices[1] = InvalidIndex;
-        _cachedBlockIndices[2] = InvalidIndex;
-        _cachedBlockIndices[3] = InvalidIndex;
-    }
-    return r;
-}
-
 bool Handle::updateATime()
 {
     bool updated = false;

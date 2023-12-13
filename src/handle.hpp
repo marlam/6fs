@@ -66,7 +66,6 @@ private:
     int removeSlot(uint64_t slot, bool removeDirentOrBlock);
 
     // internal helper functions
-    int refresh(); // Refresh in case the inode might have changed; see inode locking in Base class
     bool updateATime(); // update atime according to the relatime mount option rules; return true if modified
     int truncateNow(uint64_t length);
     int removeNow();
