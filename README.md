@@ -19,6 +19,12 @@ external USB device formatted with exfat, or a file server providing only SMB.
   time stamps, device files, sockets, named pipes, symbolic links and so on
 - Can also be used as a RAM disk, using six growing/shrinking arrays in memory
 
+# Anti-features
+
+In all honesty: performance is abysmal for anything but small or medium scale
+use cases. That's to be expected with random-access read/write on top of six
+files, combined with the very basic data structures used by this file system.
+
 # Installation
 
 6fs requires [libfuse](https://github.com/libfuse/libfuse) and
