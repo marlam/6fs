@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023
+ * Copyright (C) 2023, 2024
  * Martin Lambers <marlam@marlam.de>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -39,8 +39,7 @@ StorageFile::StorageFile(const std::string& name) : _name(name), _fd(0)
 
 StorageFile::~StorageFile()
 {
-    if (_fd != 0)
-        close();
+    close();
 }
 
 int StorageFile::open()
@@ -56,9 +55,9 @@ int StorageFile::close()
 {
     if (_fd != 0) {
         int r = ::close(_fd);
+        _fd = 0;
         if (r < 0)
             return -errno;
-        _fd = 0;
     }
     return 0;
 }
