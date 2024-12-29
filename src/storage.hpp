@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023
+ * Copyright (C) 2023, 2024
  * Martin Lambers <marlam@marlam.de>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -34,6 +34,13 @@
  */
 class Storage
 {
+public:
+    typedef enum {
+        TypeMmap,
+        TypeFile,
+        TypeMem
+    } Type;
+
 private:
     size_t _chunkSize;
     std::atomic<uint64_t> _chunksIn;

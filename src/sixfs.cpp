@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023
+ * Copyright (C) 2023, 2024
  * Martin Lambers <marlam@marlam.de>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -25,8 +25,9 @@
 #include "sixfs.hpp"
 
 
-SixFS::SixFS(const std::string& dirName, uint64_t maxSize,
+SixFS::SixFS(Storage::Type type, const std::string& dirName, uint64_t maxSize,
             const std::vector<unsigned char>& key, bool punchHoles) :
+    _type(type),
     _dirName(dirName),
     _maxSize(maxSize),
     _key(key),
@@ -188,7 +189,7 @@ int SixFS::rmdirent(const char* path, std::function<int (const Inode& inode)> in
 
 int SixFS::mount(std::string& errStr)
 {
-    _base = new Base(_dirName, _maxSize, _key, _punchHoles);
+    _base = new Base(_type, _dirName, _maxSize, _key, _punchHoles);
     bool needsRootNode = false;
     int r = _base->initialize(errStr, &needsRootNode);
     if (r == 0 && needsRootNode) {

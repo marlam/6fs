@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023
+ * Copyright (C) 2023, 2024
  * Martin Lambers <marlam@marlam.de>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -48,7 +48,7 @@ int dump(const std::string& dirName,
         const char* dumpSBlock,
         const char* dumpDBlock)
 {
-    Base base(dirName, 0, key, false);
+    Base base(Storage::TypeFile, dirName, 0, key, false);
     std::string errStr;
     bool needsRootNode = false;
     int r = base.initialize(errStr, &needsRootNode);

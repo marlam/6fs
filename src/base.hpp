@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023
+ * Copyright (C) 2023, 2024
  * Martin Lambers <marlam@marlam.de>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -32,6 +32,7 @@
 class Base
 {
 private:
+    const Storage::Type _type;
     const std::string _dirName;
     const uint64_t _maxSize;
     const std::vector<unsigned char> _key;
@@ -76,7 +77,8 @@ private:
     std::map<uint64_t, Handle*> _handleMap;
 
 public:
-    Base(const std::string& dirName, uint64_t maxSize, const std::vector<unsigned char>& key, bool punchHoles);
+    Base(Storage::Type type, const std::string& dirName, uint64_t maxSize,
+            const std::vector<unsigned char>& key, bool punchHoles);
 
     int initialize(std::string& errStr, bool* needsRootNode);
     int createRootNode();

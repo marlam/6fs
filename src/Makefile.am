@@ -11,6 +11,7 @@ bin_PROGRAMS = 6fs
     storage.hpp storage.cpp \
     storage_file.hpp storage_file.cpp \
     storage_memory.hpp storage_memory.cpp \
+    storage_mmap.hpp storage_mmap.cpp \
     map.hpp map.cpp \
     chunk.hpp chunk.cpp \
     time.hpp time.cpp \

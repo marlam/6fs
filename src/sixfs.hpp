@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023
+ * Copyright (C) 2023, 2024
  * Martin Lambers <marlam@marlam.de>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -34,6 +34,7 @@
 class SixFS
 {
 private:
+    const Storage::Type _type;
     const std::string _dirName;
     const uint64_t _maxSize;
     const std::vector<unsigned char> _key;
@@ -62,7 +63,7 @@ private:
     int rmdirent(const char* path, std::function<int (const Inode& inode)> inodeChecker);
 
 public:
-    SixFS(const std::string& dirName, uint64_t maxSize, const std::vector<unsigned char>& key, bool punchHoles);
+    SixFS(Storage::Type type, const std::string& dirName, uint64_t maxSize, const std::vector<unsigned char>& key, bool punchHoles);
     ~SixFS();
 
     int mount(std::string& errStr);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023
+ * Copyright (C) 2023, 2024
  * Martin Lambers <marlam@marlam.de>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -448,6 +448,7 @@ static void sixfsPrintHelp(const char *progname)
 {
     printf("usage: %s [options] <mountpoint>\n\n", progname);
     printf("File-system specific options:\n"
+            "    --type=<mmap|file|mem> storage type: mmap'ed files (default), normal files, or memory\n"
             "    --dir=<dir>            the directory containing the 6fs files to mount\n"
             "    --max-size=<size>      max size in bytes; suffixes K, M, G, T are supported\n"
             "    --key=<keyfile>        activate encryption and read key from keyfile\n"
@@ -515,6 +516,7 @@ static int getMaxSize(const char* s, uint64_t* val)
 typedef struct
 {
     int showHelp;
+    const char* typeName;
     const char* dirName;
     const char* maxSize;
     const char* keyName;
@@ -535,6 +537,7 @@ int main(int argc, char *argv[])
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
     SixfsOptionsStruct sixfsOptionsStruct = {
         .showHelp = 0,
+        .typeName = nullptr,
         .dirName = nullptr,
         .maxSize = nullptr,
         .keyName = nullptr,
@@ -548,6 +551,7 @@ int main(int argc, char *argv[])
         .dumpDBlock = nullptr
     };
     struct fuse_opt sixfsOptions[] = {
+        { "--type=%s",            offsetof(SixfsOptionsStruct, typeName),   1 },
         { "--dir=%s",             offsetof(SixfsOptionsStruct, dirName),    1 },
         { "--max-size=%s",        offsetof(SixfsOptionsStruct, maxSize),    1 },
         { "--key=%s",             offsetof(SixfsOptionsStruct, keyName),    1 },
@@ -631,10 +635,24 @@ int main(int argc, char *argv[])
         }
         punchHoles = (strcmp(sixfsOptionsStruct.punchHoles, "1") == 0);
     }
+    Storage::Type type = Storage::TypeMmap;
+    if (sixfsOptionsStruct.typeName) {
+        std::string typeName = std::string(sixfsOptionsStruct.typeName);
+        if (typeName == "mmap") {
+            // nothing to do
+        } else if (typeName == "file") {
+            type = Storage::TypeFile;
+        } else if (typeName == "mem") {
+            type = Storage::TypeMem;
+        } else {
+            fprintf(stderr, "Invalid argument to option --type\n");
+            return 1;
+        }
+    }
     std::string dirName;
     if (sixfsOptionsStruct.dirName) {
         dirName = std::string(sixfsOptionsStruct.dirName);
-    } else if (!sixfsOptionsStruct.showHelp) {
+    } else if (!sixfsOptionsStruct.showHelp && type != Storage::TypeMem) {
         fprintf(stderr, "Option --dir is missing\n");
         return 1;
     }
@@ -662,7 +680,7 @@ int main(int argc, char *argv[])
             return 1;
         }
     }
-    SixFS sixfs(dirName, maxSize, key, punchHoles);
+    SixFS sixfs(type, dirName, maxSize, key, punchHoles);
     if (!sixfsOptionsStruct.showHelp) {
         std::string errStr;
         int r = sixfs.mount(errStr);

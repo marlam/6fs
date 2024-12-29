@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023
+ * Copyright (C) 2023, 2024
  * Martin Lambers <marlam@marlam.de>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -22,13 +22,16 @@
 
 #include "storage_file.hpp"
 #include "storage_memory.hpp"
+#include "storage_mmap.hpp"
 #include "base.hpp"
 #include "encrypt.hpp"
 #include "logger.hpp"
 #include "emergency.hpp"
 
 
-Base::Base(const std::string& dirName, uint64_t maxSize, const std::vector<unsigned char>& key, bool punchHoles) :
+Base::Base(Storage::Type type, const std::string& dirName, uint64_t maxSize,
+        const std::vector<unsigned char>& key, bool punchHoles) :
+    _type(type),
     _dirName(dirName),
     _maxSize(maxSize),
     _key(key),
@@ -162,20 +165,31 @@ int Base::blockWriteRaw(uint64_t index, const unsigned char* rawBlock)
 
 int Base::initialize(std::string& errStr, bool* needsRootNode)
 {
-    if (_dirName.size() == 0) {
-        _inodeMapStorage = new StorageMemory;
-        _inodeChunkStorage = new StorageMemory;
-        _direntMapStorage = new StorageMemory;
-        _direntChunkStorage = new StorageMemory;
-        _blockMapStorage = new StorageMemory;
-        _blockChunkStorage = new StorageMemory;
-    } else {
+    switch (_type) {
+    case Storage::TypeMmap:
+        _inodeMapStorage    = new StorageMmap(_dirName + '/' + "inodemap.6fs");
+        _inodeChunkStorage  = new StorageMmap(_dirName + '/' + "inodedat.6fs");
+        _direntMapStorage   = new StorageMmap(_dirName + '/' + "direnmap.6fs");
+        _direntChunkStorage = new StorageMmap(_dirName + '/' + "direndat.6fs");
+        _blockMapStorage    = new StorageMmap(_dirName + '/' + "blockmap.6fs");
+        _blockChunkStorage  = new StorageMmap(_dirName + '/' + "blockdat.6fs");
+        break;
+    case Storage::TypeFile:
         _inodeMapStorage    = new StorageFile(_dirName + '/' + "inodemap.6fs");
         _inodeChunkStorage  = new StorageFile(_dirName + '/' + "inodedat.6fs");
         _direntMapStorage   = new StorageFile(_dirName + '/' + "direnmap.6fs");
         _direntChunkStorage = new StorageFile(_dirName + '/' + "direndat.6fs");
         _blockMapStorage    = new StorageFile(_dirName + '/' + "blockmap.6fs");
         _blockChunkStorage  = new StorageFile(_dirName + '/' + "blockdat.6fs");
+        break;
+    case Storage::TypeMem:
+        _inodeMapStorage = new StorageMemory;
+        _inodeChunkStorage = new StorageMemory;
+        _direntMapStorage = new StorageMemory;
+        _direntChunkStorage = new StorageMemory;
+        _blockMapStorage = new StorageMemory;
+        _blockChunkStorage = new StorageMemory;
+        break;
     }
 
     int r;
