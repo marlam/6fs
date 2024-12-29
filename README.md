@@ -7,9 +7,17 @@ store in 6fs.
 
 # Use Case
 
-6fs is useful for storing encrypted copies or backups of files on file systems
-that do not provide the full set of Linux/UNIX file systems features, e.g. an
-external USB device formatted with exfat, or a file server providing only SMB.
+The main purpose of writing this was to learn more about how [FUSE](https://github.com/libfuse/libfuse)
+works, and how file systems work in general. Since it is boring to write a program that
+cannot actually do anything useful, the use case for 6fs is this:
+
+6fs can store encrypted copies or backups of files on file systems that do not
+provide the full set of Linux/UNIX file systems features, e.g. an external USB
+device formatted with exfat, or a file server providing only SMB.
+
+(However, in all honesty: performance is abysmal for anything but small or medium scale
+use cases. That's to be expected with random-access read/write on top of six
+files, combined with the very basic data structures used by this file system.)
 
 # Features
 
@@ -18,12 +26,6 @@ external USB device formatted with exfat, or a file server providing only SMB.
 - Supports all standard UNIX file system features such as permissions, ownership,
   time stamps, device files, sockets, named pipes, symbolic links and so on
 - Can also be used as a RAM disk, using six growing/shrinking arrays in memory
-
-# Anti-features
-
-In all honesty: performance is abysmal for anything but small or medium scale
-use cases. That's to be expected with random-access read/write on top of six
-files, combined with the very basic data structures used by this file system.
 
 # Installation
 
@@ -38,9 +40,10 @@ install` sequence to install it.
 Usage: `6fs [options] <mountpoint>`
 
 Options:
-- `--dir=<dir>`: The directory containing the six 6fs files. They will
-  be automatically created if they do not exist yet. An empty argument will
-  create a RAM disk instead.
+- `--type=<mmap|file|mem>`: The storage type: mmap'ed file (the default), regular file,
+  or memory.
+- `--dir=<dir>`: The directory containing the six 6fs files (not required for type mem).
+  The files will be automatically created if they do not exist yet.
 - `--max-size=<size>`: Set a maximum size for the 6fs file system.
   Suffixes K, M, G, T are supported. Note that this limit is only approximate
   for performance reasons. Recommended for RAM disks.
