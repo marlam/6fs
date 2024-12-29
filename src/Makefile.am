@@ -1,5 +1,5 @@
 AM_CPPFLAGS = $(fuse3_CFLAGS) $(libsodium_CFLAGS)
-AM_CXXFLAGS = -Wall -Wextra -std=gnu++20 -pthread -flto
+AM_CXXFLAGS = -O3 -Wall -Wextra -std=gnu++20 -pthread -flto
 AM_LDFLAGS = -pthread -flto
 
 bin_PROGRAMS = 6fs
