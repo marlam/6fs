@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023
+ * Copyright (C) 2023, 2024
  * Martin Lambers <marlam@marlam.de>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -55,9 +55,11 @@ private:
     static constexpr uint64_t maxSlotCount = 1 + N + N * N + N * N * N + N * N * N * N;
     uint64_t _cachedBlockIndices[4]; // one for each level of indirection
     Block _cachedBlocks[4];          // one for each level of indirection
+    bool _cachedBlockIsModified[4];  // one for each level of indirection
 
     static void slotToTreeIndices(uint64_t slot, int* tree, uint64_t ijkl[4]);
     int cacheBlock(int indirectionLevel, uint64_t blockIndex);
+    int saveCachedBlockIfModified(int treeLevel);
 
     uint64_t slotCount() const;
     int getSlot(uint64_t slot, uint64_t* i);
@@ -81,6 +83,9 @@ private:
 
 public:
     Handle(Base* base, uint64_t inodeIndex, const Inode& inode);
+
+    /* Call before destroying the handle; there might be operations pending: */
+    int cleanup();
 
     /* Get information about this handle */
     uint64_t inodeIndex() const;

@@ -496,6 +496,9 @@ int Base::handleRelease(Handle* handle)
             _handleMap.erase(handle->inodeIndex());
             if (handle->removeOnceUnused())
                 r = handle->remove();
+            int r1 = handle->cleanup();
+            if (r == 0)
+                r = r1;
             delete handle;
         }
     }
