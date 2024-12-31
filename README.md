@@ -5,19 +5,11 @@ data in six files on an existing file system. These six files grow and shrink
 dynamically, and therefore always use only little more space than the data you
 store in 6fs.
 
-# Use Case
-
-The main purpose of writing this was to learn more about how [FUSE](https://github.com/libfuse/libfuse)
-works, and how file systems work in general. Since it is boring to write a program that
-cannot actually do anything useful, the use case for 6fs is this:
-
-6fs can store encrypted copies or backups of files on file systems that do not
-provide the full set of Linux/UNIX file systems features, e.g. an external USB
-device formatted with exfat, or a file server providing only SMB.
-
-(However, in all honesty: performance is abysmal for anything but small or medium scale
-use cases. That's to be expected with random-access read/write on top of six
-files, combined with the very basic data structures used by this file system.)
+The main purpose of 6fs is to learn more about how
+[FUSE](https://github.com/libfuse/libfuse) works, and how file systems work in
+general. 6fs uses very basic data structures, so it is easy to understand, but
+its pratical usefulness is limited. In particular, performance is bad for
+anything but small or medium scale use cases.
 
 # Features
 
@@ -25,6 +17,7 @@ files, combined with the very basic data structures used by this file system.)
 - Supports encryption, including metadata and directory structures
 - Supports all standard UNIX file system features such as permissions, ownership,
   time stamps, device files, sockets, named pipes, symbolic links and so on
+- Works on very limited underlying file systems, e.g. exfat or SMB shares
 - Can also be used as a RAM disk, using six growing/shrinking arrays in memory
 
 # Installation
