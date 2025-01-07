@@ -261,17 +261,35 @@ int Base::createRootNode()
     return inodeAdd(&rootIndex, &root);
 }
 
+static std::string humanReadableSize(size_t size)
+{
+    char buf[128];
+
+    if (size >= 1024ULL * 1024ULL * 1024ULL * 1024ULL)
+        snprintf(buf, sizeof(buf), "%.2f TiB", size / (double)(1024ULL * 1024ULL * 1024ULL * 1024ULL));
+    else if (size >= 1024ULL * 1024ULL * 1024ULL)
+        snprintf(buf, sizeof(buf), "%.2f GiB", size / (double)(1024ULL * 1024ULL * 1024ULL));
+    else if (size >= 1024ULL * 1024ULL)
+        snprintf(buf, sizeof(buf), "%.2f MiB", size / (double)(1024ULL * 1024ULL));
+    else if (size >= 1024ULL)
+        snprintf(buf, sizeof(buf), "%.2f KiB", size / (double)(1024ULL));
+    else
+        snprintf(buf, sizeof(buf), "%zu B", size);
+
+    return std::string(buf);
+}
+
 int Base::cleanup()
 {
     if (!_blockMgr && !_direntMgr && !_inodeMgr)
         return 0;
 
     // Statistics
-    uint64_t inodeBitSetSize = 0, inodeBitSetsIn = 0, inodeBitSetsOut = 0, inodeBitSetsPunchedHole = 0;
-    uint64_t inodeSize = 0, inodesIn = 0, inodesOut = 0, inodesPunchedHole = 0;
-    uint64_t direntBitSetSize = 0, direntBitSetsIn = 0, direntBitSetsOut = 0, direntBitSetsPunchedHole = 0;
-    uint64_t direntSize = 0, direntsIn = 0, direntsOut = 0, direntsPunchedHole = 0;
-    uint64_t blockBitSetSize = 0, blockBitSetsIn = 0, blockBitSetsOut = 0, blockBitSetsPunchedHole = 0;
+    uint64_t inodeBitSetSize = 0, inodeBitSetsIn = 0, inodeBitSetsOut = 0;
+    uint64_t inodeSize = 0, inodesIn = 0, inodesOut = 0;
+    uint64_t direntBitSetSize = 0, direntBitSetsIn = 0, direntBitSetsOut = 0;
+    uint64_t direntSize = 0, direntsIn = 0, direntsOut = 0;
+    uint64_t blockBitSetSize = 0, blockBitSetsIn = 0, blockBitSetsOut = 0;
     uint64_t blockSize = 0, blocksIn = 0, blocksOut = 0, blocksPunchedHole = 0;
 
     // Shutdown / cleanup
@@ -291,7 +309,6 @@ int Base::cleanup()
             blockBitSetSize = _blockMapStorage->chunkSize();
             blockBitSetsIn = _blockMapStorage->chunksIn();
             blockBitSetsOut = _blockMapStorage->chunksOut();
-            blockBitSetsPunchedHole = _blockMapStorage->chunksPunchedHole();
             r[2] = _blockMapStorage->close();
             delete _blockMapStorage;
             _blockMapStorage = nullptr;
@@ -309,7 +326,6 @@ int Base::cleanup()
             direntSize = _direntChunkStorage->chunkSize();
             direntsIn = _direntChunkStorage->chunksIn();
             direntsOut = _direntChunkStorage->chunksOut();
-            direntsPunchedHole = _direntChunkStorage->chunksPunchedHole();
             r[4] = _direntChunkStorage->close();
             delete _direntChunkStorage;
             _direntChunkStorage = nullptr;
@@ -318,7 +334,6 @@ int Base::cleanup()
             direntBitSetSize = _direntMapStorage->chunkSize();
             direntBitSetsIn = _direntMapStorage->chunksIn();
             direntBitSetsOut = _direntMapStorage->chunksOut();
-            direntBitSetsPunchedHole = _direntMapStorage->chunksPunchedHole();
             r[5] = _direntMapStorage->close();
             delete _direntMapStorage;
             _direntMapStorage = nullptr;
@@ -336,7 +351,6 @@ int Base::cleanup()
             inodeSize = _inodeChunkStorage->chunkSize();
             inodesIn = _inodeChunkStorage->chunksIn();
             inodesOut = _inodeChunkStorage->chunksOut();
-            inodesPunchedHole = _inodeChunkStorage->chunksPunchedHole();
             r[7] = _inodeChunkStorage->close();
             delete _inodeChunkStorage;
             _inodeChunkStorage = nullptr;
@@ -345,7 +359,6 @@ int Base::cleanup()
             inodeBitSetSize = _inodeMapStorage->chunkSize();
             inodeBitSetsIn = _inodeMapStorage->chunksIn();
             inodeBitSetsOut = _inodeMapStorage->chunksOut();
-            inodeBitSetsPunchedHole = _inodeMapStorage->chunksPunchedHole();
             r[8] = _inodeMapStorage->close();
             delete _inodeMapStorage;
             _inodeMapStorage = nullptr;
@@ -359,37 +372,42 @@ int Base::cleanup()
     }
 
     // log statistics
-    logger.log(Logger::Info, "inode bit sets in/out:  %lu/%lu (%lu/%lu bytes)",
-            inodeBitSetsIn, inodeBitSetsOut,
-            inodeBitSetsIn * inodeBitSetSize, inodeBitSetsOut * inodeBitSetSize);
-    logger.log(Logger::Info, "inodes in/out:          %lu/%lu (%lu/%lu bytes)",
-            inodesIn, inodesOut,
-            inodesIn * inodeSize, inodesOut * inodeSize);
-    logger.log(Logger::Info, "dirent bit sets in/out: %lu/%lu (%lu/%lu bytes)",
-            direntBitSetsIn, direntBitSetsOut,
-            direntBitSetsIn * direntBitSetSize, direntBitSetsOut * direntBitSetSize);
-    logger.log(Logger::Info, "dirents in/out:         %lu/%lu (%lu/%lu bytes)",
-            direntsIn, direntsOut,
-            direntsIn * direntSize, direntsOut * direntSize);
-    logger.log(Logger::Info, "block bit sets in/out:  %lu/%lu (%lu/%lu bytes)",
-            blockBitSetsIn, blockBitSetsOut,
-            blockBitSetsIn * blockBitSetSize, blockBitSetsOut * blockBitSetSize);
-    logger.log(Logger::Info, "blocks in/out:          %lu/%lu (%lu/%lu bytes)",
-            blocksIn, blocksOut,
-            blocksIn * blockSize, blocksOut * blockSize);
-    logger.log(Logger::Info, "grand total in/out:     %lu/%lu bytes",
-              inodeBitSetsIn * inodeBitSetSize + inodesIn * inodeSize
-            + direntBitSetsIn * direntBitSetSize + direntsIn * direntSize
-            + blockBitSetsIn * blockBitSetSize + blocksIn * blockSize,
-              inodeBitSetsOut * inodeBitSetSize + inodesOut * inodeSize
-            + direntBitSetsOut * direntBitSetSize + direntsOut * direntSize
-            + blockBitSetsOut * blockBitSetSize + blocksOut * blockSize);
-    logger.log(Logger::Info, "punched holes: %lu inode bit sets, %lu inodes, "
-            "%lu dirent bit sets, %lu dirents, "
-            "%lu block bit sets, %lu blocks",
-            inodeBitSetsPunchedHole, inodesPunchedHole,
-            direntBitSetsPunchedHole, direntsPunchedHole,
-            blockBitSetsPunchedHole, blocksPunchedHole);
+    size_t inodeBitSetsInBytes  = inodeBitSetsIn  * inodeBitSetSize;
+    size_t inodeBitSetsOutBytes = inodeBitSetsOut * inodeBitSetSize;
+    size_t inodesInBytes  = inodesIn  * inodeSize;
+    size_t inodesOutBytes = inodesOut * inodeSize;
+    size_t direntBitSetsInBytes  = direntBitSetsIn  * direntBitSetSize;
+    size_t direntBitSetsOutBytes = direntBitSetsOut * direntBitSetSize;
+    size_t direntsInBytes  = direntsIn  * direntSize;
+    size_t direntsOutBytes = direntsOut * direntSize;
+    size_t blockBitSetsInBytes  = blockBitSetsIn  * blockBitSetSize;
+    size_t blockBitSetsOutBytes = blockBitSetsOut * blockBitSetSize;
+    size_t blocksInBytes  = blocksIn  * blockSize;
+    size_t blocksOutBytes = blocksOut * blockSize;
+    size_t totalInBytes = inodeBitSetsInBytes + inodesInBytes + direntBitSetsInBytes + direntsInBytes + blockBitSetsInBytes + blocksInBytes;
+    size_t totalOutBytes = inodeBitSetsOutBytes + inodesOutBytes + direntBitSetsOutBytes + direntsOutBytes + blockBitSetsOutBytes + blocksOutBytes;
+    logger.log(Logger::Info, "inode bit sets (%lu bytes):", inodeBitSetSize);
+    logger.log(Logger::Info, "  in:  %lu (%s)", inodeBitSetsIn,  humanReadableSize(inodeBitSetsInBytes).c_str());
+    logger.log(Logger::Info, "  out: %lu (%s)", inodeBitSetsOut, humanReadableSize(inodeBitSetsOutBytes).c_str());
+    logger.log(Logger::Info, "inodes (%lu bytes):", inodeSize);
+    logger.log(Logger::Info, "  in:  %lu (%s)", inodesIn,  humanReadableSize(inodesInBytes).c_str());
+    logger.log(Logger::Info, "  out: %lu (%s)", inodesOut, humanReadableSize(inodesOutBytes).c_str());
+    logger.log(Logger::Info, "dirent bit sets (%lu bytes):", direntBitSetSize);
+    logger.log(Logger::Info, "  in:  %lu (%s)", direntBitSetsIn,  humanReadableSize(direntBitSetsInBytes).c_str());
+    logger.log(Logger::Info, "  out: %lu (%s)", direntBitSetsOut, humanReadableSize(direntBitSetsOutBytes).c_str());
+    logger.log(Logger::Info, "dirents (%lu bytes):", direntSize);
+    logger.log(Logger::Info, "  in:  %lu (%s)", direntsIn,  humanReadableSize(direntsInBytes).c_str());
+    logger.log(Logger::Info, "  out: %lu (%s)", direntsOut, humanReadableSize(direntsOutBytes).c_str());
+    logger.log(Logger::Info, "block bit sets (%lu bytes):", blockBitSetSize);
+    logger.log(Logger::Info, "  in:  %lu (%s)", blockBitSetsIn,  humanReadableSize(blockBitSetsInBytes).c_str());
+    logger.log(Logger::Info, "  out: %lu (%s)", blockBitSetsOut, humanReadableSize(blockBitSetsOutBytes).c_str());
+    logger.log(Logger::Info, "blocks (%lu bytes):", blockSize);
+    logger.log(Logger::Info, "  in:  %lu (%s)", blocksIn,  humanReadableSize(blocksInBytes).c_str());
+    logger.log(Logger::Info, "  out: %lu (%s)", blocksOut, humanReadableSize(blocksOutBytes).c_str());
+    logger.log(Logger::Info, "  punched holes: %lu", blocksPunchedHole);
+    logger.log(Logger::Info, "grand total:");
+    logger.log(Logger::Info, "  in:  %s", humanReadableSize(totalInBytes).c_str());
+    logger.log(Logger::Info, "  out: %s", humanReadableSize(totalOutBytes).c_str());
 
     // return
     int ret = 0;
