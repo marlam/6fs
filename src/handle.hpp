@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023, 2024
+ * Copyright (C) 2023, 2024, 2025
  * Martin Lambers <marlam@marlam.de>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -113,7 +113,7 @@ public:
 
     int readlink(char* buf, size_t bufsize);
 
-    int chmod(uint16_t mode);
+    int chmod(uint32_t mode);
     int chown(uint32_t uid, uint32_t gid);
     int utimens(bool updateAtime, const Time& atime, bool updateMtime, const Time& mtime, bool updateCtime, const Time& ctime);
     int truncate(uint64_t length);

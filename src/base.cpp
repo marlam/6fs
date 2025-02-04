@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023, 2024
+ * Copyright (C) 2023, 2024, 2025
  * Martin Lambers <marlam@marlam.de>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -221,6 +221,16 @@ int Base::initialize(std::string& errStr, bool* needsRootNode)
 
     if (r == 0) {
         *needsRootNode = (_inodeMgr->chunksInStorage() == 0);
+    }
+    if (r == 0 && !(*needsRootNode)) {
+        Inode inode;
+        r = inodeRead(0, &inode);
+        if (r == 0) {
+            if (inode.typeAndMode >> 16u) {
+                logger.log(Logger::Error, "inodes are in v0 format");
+                r = -EBADF;
+            }
+        }
     }
 
     if (r < 0) {

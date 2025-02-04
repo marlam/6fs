@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023, 2024
+ * Copyright (C) 2023, 2024, 2025
  * Martin Lambers <marlam@marlam.de>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -74,10 +74,10 @@ public:
 
     int getAttr(Handle* handle, const char* path, uint64_t* inodeIndex, Inode* inode);
 
-    int mkdir(const char* path, uint16_t typeAndMode);
+    int mkdir(const char* path, uint32_t typeAndMode);
     int rmdir(const char* path);
 
-    int mknod(const char* path, uint16_t typeAndMode, uint64_t rdev);
+    int mknod(const char* path, uint32_t typeAndMode, uint64_t rdev);
     int unlink(const char* path);
 
     int symlink(const char* target, const char* linkpath);
@@ -88,7 +88,7 @@ public:
     typedef enum { RenameNormal, RenameNoreplace, RenameExchange } RenameMode;
     int rename(const char* oldpath, const char* newpath, RenameMode mode);
 
-    int chmod(Handle* handle, const char* path, uint16_t mode);
+    int chmod(Handle* handle, const char* path, uint32_t mode);
     int chown(Handle* handle, const char* path, uint32_t uid, uint32_t gid);
     int utimens(Handle* handle, const char* path, bool updateAtime, const Time& atime, bool updateMtime, const Time& mtime, bool updateCtime, const Time& ctime);
     int truncate(Handle* handle, const char* path, uint64_t length);

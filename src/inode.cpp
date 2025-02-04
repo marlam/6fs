@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023
+ * Copyright (C) 2023, 2024, 2025
  * Martin Lambers <marlam@marlam.de>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -31,8 +31,8 @@ Inode::Inode() :
     mtime(),
     uid(0),
     gid(0),
-    nlink(0),
     typeAndMode(0),
+    nlink(0),
     rdev(0),
     size(0),
     slotTrees { InvalidIndex, InvalidIndex, InvalidIndex, InvalidIndex, InvalidIndex },
@@ -53,7 +53,7 @@ Inode Inode::empty()
     return inode;
 }
 
-Inode Inode::directory(const Inode* parent, uint16_t mode)
+Inode Inode::directory(const Inode* parent, uint32_t mode)
 {
     Inode inode = empty();
     if (parent && parent->typeAndMode & ModeSGID)
@@ -65,7 +65,7 @@ Inode Inode::directory(const Inode* parent, uint16_t mode)
     return inode;
 }
 
-Inode Inode::node(uint16_t typeAndMode, uint64_t rdev)
+Inode Inode::node(uint32_t typeAndMode, uint64_t rdev)
 {
     Inode inode = empty();
     inode.typeAndMode = typeAndMode;

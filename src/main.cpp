@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023, 2024
+ * Copyright (C) 2023, 2024, 2025
  * Martin Lambers <marlam@marlam.de>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -38,7 +38,7 @@
 
 /* Helper functions to convert between SixFS and system types */
 
-mode_t toSysMode(uint16_t typeAndMode)
+mode_t toSysMode(uint32_t typeAndMode)
 {
     mode_t m = 0;
     if ((typeAndMode & TypeMask) == TypeSOCK)
@@ -82,9 +82,9 @@ mode_t toSysMode(uint16_t typeAndMode)
     return m;
 }
 
-uint16_t toTypeAndMode(mode_t mode)
+uint32_t toTypeAndMode(mode_t mode)
 {
-    uint16_t m = 0;
+    uint32_t m = 0;
     if (S_ISSOCK(mode))
         m = TypeSOCK;
     else if (S_ISLNK(mode))

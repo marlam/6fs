@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023, 2024
+ * Copyright (C) 2023, 2024, 2025
  * Martin Lambers <marlam@marlam.de>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -439,7 +439,7 @@ int Handle::link()
     int r = 0;
     if (_inode.type() != TypeREG)
         r = -EINVAL;
-    if (_inode.nlink == std::numeric_limits<uint16_t>::max())
+    if (_inode.nlink == std::numeric_limits<uint64_t>::max())
         r = -EMLINK;
     if (r == 0) {
         lockExclusive();
@@ -525,7 +525,7 @@ int Handle::mkdirent(const char* name, size_t nameLen, uint64_t existingInodeInd
         r = -ENOTDIR;
     if (r == 0 && nameLen >= sizeof(Dirent::name))
         r = -ENAMETOOLONG;
-    if (r == 0 && _inode.nlink == std::numeric_limits<uint16_t>::max())
+    if (r == 0 && _inode.nlink == std::numeric_limits<uint64_t>::max())
         r = -EMLINK;
     if (r == 0 && slotCount() == maxSlotCount)
         r = -ENOSPC;
@@ -645,7 +645,7 @@ int Handle::readlink(char* buf, size_t bufsize)
     return r;
 }
 
-int Handle::chmod(uint16_t mode)
+int Handle::chmod(uint32_t mode)
 {
     lockExclusive();
     Inode oldInode = _inode;

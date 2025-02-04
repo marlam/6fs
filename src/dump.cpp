@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023, 2024
+ * Copyright (C) 2023, 2024, 2025
  * Martin Lambers <marlam@marlam.de>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -87,7 +87,7 @@ int dump(const std::string& dirName,
         printf("  Ctime: %ld seconds %u nanoseconds\n", inode.ctime.seconds, inode.ctime.nanoseconds);
         printf("  Mtime: %ld seconds %u nanoseconds\n", inode.mtime.seconds, inode.mtime.nanoseconds);
         printf("  UID, GID: %u %u\n", inode.uid, inode.gid);
-        printf("  nlink: %d\n", inode.nlink);
+        printf("  nlink: %lu\n", inode.nlink);
         printf("  rdev: %lu\n", inode.rdev);
         printf("  size: %lu\n", inode.size);
         printf("  slotTrees: %lu %lu %lu %lu %lu\n", inode.slotTrees[0], inode.slotTrees[1], inode.slotTrees[2], inode.slotTrees[3], inode.slotTrees[4]);

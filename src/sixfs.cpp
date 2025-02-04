@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023, 2024
+ * Copyright (C) 2023, 2024, 2025
  * Martin Lambers <marlam@marlam.de>
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -302,7 +302,7 @@ int SixFS::readDirentPlus(Handle* handle, uint64_t direntSlot, Dirent* dirent, I
     return r;
 }
 
-int SixFS::mkdir(const char* path, uint16_t typeAndMode)
+int SixFS::mkdir(const char* path, uint32_t typeAndMode)
 {
     structureLockExclusive();
     int r = mkdirent(path, InvalidIndex,
@@ -327,7 +327,7 @@ int SixFS::rmdir(const char* path)
     return r;
 }
 
-int SixFS::mknod(const char* path, uint16_t typeAndMode, uint64_t rdev)
+int SixFS::mknod(const char* path, uint32_t typeAndMode, uint64_t rdev)
 {
     structureLockExclusive();
     int r = mkdirent(path, InvalidIndex,
@@ -596,7 +596,7 @@ int SixFS::rename(const char* oldPath, const char* newPath, RenameMode mode)
     return r;
 }
 
-int SixFS::chmod(Handle* handle, const char* path, uint16_t mode)
+int SixFS::chmod(Handle* handle, const char* path, uint32_t mode)
 {
     structureLockShared();
     int r = 0;
