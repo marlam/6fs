@@ -47,19 +47,9 @@ Handle::Handle(Base* base, uint64_t inodeIndex, const Inode& inode) :
     _append(false),
     _refCount(0),
     _removeOnceUnused(false),
-    _cachedBlockIndices { InvalidIndex, InvalidIndex, InvalidIndex, InvalidIndex },
-    _cachedBlockIsModified { false, false, false, false }
+    _cachedBlockIndices { InvalidIndex, InvalidIndex, InvalidIndex, InvalidIndex }
 {
     static_assert(sizeof(Block) % sizeof(uint64_t) == 0);
-}
-
-int Handle::cleanup()
-{
-    int r0 = saveCachedBlockIfModified(0);
-    int r1 = saveCachedBlockIfModified(1);
-    int r2 = saveCachedBlockIfModified(2);
-    int r3 = saveCachedBlockIfModified(3);
-    return (r0 != 0 ? r0 : r1 != 0 ? r1 : r2 != 0 ? r2 : r3);
 }
 
 void Handle::lockExclusive()
@@ -152,27 +142,8 @@ int Handle::cacheBlock(int treeLevel, uint64_t blockIndex)
 {
     int r = 0;
     if (_cachedBlockIndices[treeLevel] != blockIndex) {
-        r = saveCachedBlockIfModified(treeLevel);
-        if (r == 0) {
-            r = _base->blockRead(blockIndex, &(_cachedBlocks[treeLevel]));
-            _cachedBlockIndices[treeLevel] = (r == 0 ? blockIndex : InvalidIndex);
-            _cachedBlockIsModified[treeLevel] = false;
-        }
-    }
-    return r;
-}
-
-int Handle::saveCachedBlockIfModified(int treeLevel)
-{
-    int r = 0;
-    if (_cachedBlockIsModified[treeLevel]) {
-        r = _base->blockWrite(_cachedBlockIndices[treeLevel], &(_cachedBlocks[treeLevel]));
-        _cachedBlockIsModified[treeLevel] = false;
-        if (r != 0) {
-            logger.log(Logger::Error, "Handle::saveCachedBlockIfModified(%d) failure: %s", treeLevel, strerror(-r));
-            emergency(EmergencySystemFailure);
-            r = -ENOTRECOVERABLE;
-        }
+        r = _base->blockRead(blockIndex, &(_cachedBlocks[treeLevel]));
+        _cachedBlockIndices[treeLevel] = (r == 0 ? blockIndex : InvalidIndex);
     }
     return r;
 }
@@ -239,11 +210,7 @@ int Handle::setSlot(uint64_t slot, uint64_t index)
     uint64_t blockIndex = _inode.slotTrees[tree];
     for (int l = 0; l < tree; l++) {
         if (blockIndex == InvalidIndex) {
-            r = saveCachedBlockIfModified(l);
-            if (r < 0)
-                return r;
             _cachedBlocks[l].initializeIndices();
-            _cachedBlockIsModified[l] = false;
             r = _base->blockAdd(&blockIndex, &(_cachedBlocks[l]));
             if (r < 0) {
                 _cachedBlockIndices[l] = InvalidIndex;
@@ -252,18 +219,19 @@ int Handle::setSlot(uint64_t slot, uint64_t index)
             _cachedBlockIndices[l] = blockIndex;
             if (l > 0) {
                 _cachedBlocks[l - 1].indices[ijkl[l - 1]] = blockIndex;
-                _cachedBlockIsModified[l - 1] = true;
+                r = _base->blockWrite(_cachedBlockIndices[l - 1], &(_cachedBlocks[l - 1]));
+                if (r < 0)
+                    return r;
             } else {
                 _inode.slotTrees[tree] = blockIndex;
             }
-        } else {
-            r = cacheBlock(l, blockIndex);
-            if (r < 0)
-                return r;
         }
+        r = cacheBlock(l, blockIndex);
+        if (r < 0)
+            return r;
         if (l == tree - 1) {
+            uint64_t oldI = _cachedBlocks[l].indices[ijkl[l]];
             _cachedBlocks[l].indices[ijkl[l]] = index;
-            _cachedBlockIsModified[l] = true;
             bool allEntriesInvalid = (index == InvalidIndex);
             for (uint64_t j = 0; allEntriesInvalid && j < N; j++)
                 if (_cachedBlocks[l].indices[j] != InvalidIndex)
@@ -272,21 +240,28 @@ int Handle::setSlot(uint64_t slot, uint64_t index)
                 // delete this indirection block and, if possible, its predecessors
                 for (int ll = l; allEntriesInvalid && ll >= 0; ll--) {
                     r = _base->blockRemove(_cachedBlockIndices[ll]);
-                    _cachedBlockIndices[ll] = InvalidIndex;
-                    _cachedBlockIsModified[ll] = false;
                     if (r < 0)
                         return r;
+                    _cachedBlockIndices[ll] = InvalidIndex;
                     if (ll > 0) {
                         _cachedBlocks[ll - 1].indices[ijkl[ll - 1]] = InvalidIndex;
                         for (uint64_t j = 0; allEntriesInvalid && j < N; j++)
                             if (_cachedBlocks[ll - 1].indices[j] != InvalidIndex)
                                 allEntriesInvalid = false;
                         if (!allEntriesInvalid) {
-                            _cachedBlockIsModified[ll - 1] = true;
+                            r = _base->blockWrite(_cachedBlockIndices[ll - 1], &(_cachedBlocks[ll - 1]));
+                            if (r < 0)
+                                return r;
                         }
                     } else {
                         _inode.slotTrees[tree] = InvalidIndex;
                     }
+                }
+            } else {
+                r = _base->blockWrite(_cachedBlockIndices[l], &(_cachedBlocks[l]));
+                if (r < 0) {
+                    _cachedBlocks[l].indices[ijkl[l]] = oldI;
+                    return r;
                 }
             }
             break;
@@ -459,13 +434,13 @@ int Handle::link()
 int Handle::remove()
 {
     int r = 0;
+    lockExclusive();
     if (refCount() <= 0) {
-        lockExclusive();
         r = removeNow();
-        unlockExclusive();
     } else {
         _removeOnceUnused = true;
     }
+    unlockExclusive();
     return r;
 }
 
@@ -485,7 +460,7 @@ int Handle::removeNow()
                  * while (r == 0 && slotCount() > 0) {
                  *     r = removeSlot(slotCount() - 1, true);
                  * }
-                 * But that modifies indirection blocks for large files a lot,
+                 * But that rewrites (and reencrypts) indirection blocks for large files a lot,
                  * and we never need those blocks again.
                  * So we simply go over all blocks and remove them, and then have to remove
                  * the indirection blocks whenever a new one appears. */
